@@ -1,0 +1,216 @@
+CREATE TABLE Category (
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100) NOT NULL,
+    Description TEXT
+);
+
+CREATE TABLE Seller (
+    SellerID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Email VARCHAR(150) NOT NULL UNIQUE,
+    PhoneNumber VARCHAR(15) NOT NULL,
+    GSTIN VARCHAR(15) NOT NULL UNIQUE,
+    Rating DECIMAL(2,1) DEFAULT 0.0
+);
+
+CREATE TABLE Customer (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Email VARCHAR(150) NOT NULL UNIQUE,
+    PhoneNumber VARCHAR(15) NOT NULL
+);
+
+CREATE TABLE Address (
+    AddressID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT NOT NULL,
+    HouseNo VARCHAR(50) NOT NULL,
+    Street VARCHAR(100) NOT NULL,
+    Landmark VARCHAR(100),
+    City VARCHAR(50) NOT NULL,
+    State VARCHAR(50) NOT NULL,
+    Pincode VARCHAR(10) NOT NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Product (
+    ProductID INT AUTO_INCREMENT PRIMARY KEY,
+    Title VARCHAR(200) NOT NULL,
+    Price DECIMAL(10,2) NOT NULL,
+    StockQuantity INT NOT NULL DEFAULT 0,
+    SellerID INT NOT NULL,
+    CategoryID INT NULL,
+    FOREIGN KEY (SellerID) REFERENCES Seller(SellerID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (CategoryID) REFERENCES Category(CategoryID)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Electronics (
+    ProductID INT PRIMARY KEY,
+    Brand VARCHAR(100) NOT NULL,
+    ModelNo VARCHAR(100) NOT NULL,
+    WarrantyPeriod VARCHAR(50),
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Clothing (
+    ProductID INT PRIMARY KEY,
+    Size VARCHAR(20) NOT NULL,
+    Color VARCHAR(50) NOT NULL,
+    Material VARCHAR(50),
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Grocery (
+    ProductID INT PRIMARY KEY,
+    FSSAI_LicNo VARCHAR(14) NOT NULL,
+    ExpiryDate DATE NOT NULL,
+    IsPerishable BOOLEAN NOT NULL DEFAULT TRUE,
+    GenderTarget VARCHAR(20),
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE `Order` (
+    OrderID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT NULL,
+    AddressID INT NULL,
+    OrderDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    TotalAmount DECIMAL(10,2) NOT NULL,
+    Status VARCHAR(50) NOT NULL DEFAULT 'Placed',
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    FOREIGN KEY (AddressID) REFERENCES Address(AddressID)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE OrderItem (
+    OrderID INT NOT NULL,
+    ItemNo INT NOT NULL,
+    ProductID INT NULL,
+    Quantity INT NOT NULL CHECK (Quantity > 0),
+    UnitPrice DECIMAL(10,2) NOT NULL,
+    Subtotal DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (OrderID, ItemNo),
+    FOREIGN KEY (OrderID) REFERENCES `Order`(OrderID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Payment (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT NOT NULL,
+    TransactionID VARCHAR(100) NOT NULL UNIQUE,
+    Amount DECIMAL(10,2) NOT NULL,
+    PaymentMethod VARCHAR(50) NOT NULL,
+    PaymentStatus VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    PaymentDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (OrderID) REFERENCES `Order`(OrderID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Delivery (
+    DeliveryID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT NOT NULL,
+    AddressID INT NULL,
+    TrackingNumber VARCHAR(100) NOT NULL UNIQUE,
+    Status VARCHAR(50) NOT NULL DEFAULT 'In-Transit',
+    ExpectedDate DATE,
+    DeliveryDate DATE,
+    FOREIGN KEY (OrderID) REFERENCES `Order`(OrderID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (AddressID) REFERENCES Address(AddressID)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+INSERT INTO Category (CategoryName, Description) VALUES
+('Electronics', 'Gadgets and electronic appliances'),
+('Clothing', 'Apparel and accessories'),
+('Grocery', 'Daily food items and pantry essentials');
+
+INSERT INTO Seller (Name, Email, PhoneNumber, GSTIN, Rating) VALUES
+('TechRetail India', 'contact@techretail.in', '9876543210', '07AAAAA0000A1Z5', 4.8),
+('FashionHub', 'sales@fashionhub.in', '9876543211', '07BBBBB1111B1Z2', 4.5);
+
+INSERT INTO Product (Title, Price, StockQuantity, SellerID, CategoryID) VALUES
+('Wireless Headphones', 2999.00, 50, 1, 1),
+('Cotton T-Shirt', 799.00, 100, 2, 2),
+('Organic Almonds 500g', 450.00, 200, 2, 3);
+
+INSERT INTO Electronics (ProductID, Brand, ModelNo, WarrantyPeriod) VALUES
+(1, 'SoundBass', 'SB-2026', '1 Year');
+
+INSERT INTO Clothing (ProductID, Size, Color, Material) VALUES
+(2, 'L', 'Blue', '100% Cotton');
+
+INSERT INTO Grocery (ProductID, FSSAI_LicNo, ExpiryDate, IsPerishable, GenderTarget) VALUES
+(3, '10014011000123', '2026-12-31', FALSE, 'Unisex');
+
+INSERT INTO Customer (Name, Email, PhoneNumber) VALUES
+('Aarav Sharma', 'aarav.sharma@example.com', '9123456789');
+
+INSERT INTO Address (CustomerID, HouseNo, Street, Landmark, City, State, Pincode) VALUES
+(1, 'Flat 402', 'MG Road', 'Near Metro Station', 'Bengaluru', 'Karnataka', '560001');
+
+INSERT INTO `Order` (CustomerID, AddressID, TotalAmount, Status) VALUES
+(1, 1, 3798.00, 'Processing');
+
+INSERT INTO OrderItem (OrderID, ItemNo, ProductID, Quantity, UnitPrice, Subtotal) VALUES
+(1, 1, 1, 1, 2999.00, 2999.00),
+(1, 2, 2, 1, 799.00, 799.00);
+
+INSERT INTO Payment (OrderID, TransactionID, Amount, PaymentMethod, PaymentStatus) VALUES
+(1, 'TXN9876543210', 3798.00, 'UPI', 'Completed');
+
+INSERT INTO Delivery (OrderID, AddressID, TrackingNumber, Status, ExpectedDate) VALUES
+(1, 1, 'TRK123456789IN', 'Shipped', '2026-09-28');
+
+
+SELECT * FROM Category;
+SELECT * FROM Seller;
+SELECT * FROM Customer;
+SELECT * FROM Address;
+SELECT * FROM Product;
+SELECT * FROM Electronics;
+SELECT * FROM Clothing;
+SELECT * FROM Grocery;
+SELECT * FROM `Order`;
+SELECT * FROM OrderItem;
+SELECT * FROM Payment;
+SELECT * FROM Delivery;
+
+
+INSERT INTO Product
+(Title, Price, StockQuantity, SellerID, CategoryID)
+VALUES
+('Smartwatch', 4999.00, 20, 999, 1);
+
+INSERT INTO Seller
+(Name, Email, PhoneNumber, GSTIN, Rating)
+VALUES
+('New Seller', 'new@seller.in', '9999999999',
+ '07AAAAA0000A1Z5', 4.0);
+
+SELECT * FROM `Order` WHERE OrderID = 1;
+SELECT * FROM OrderItem WHERE OrderID = 1;
+SELECT * FROM Payment WHERE OrderID = 1;
+SELECT * FROM Delivery WHERE OrderID = 1;
+
+SELECT ProductID, Title, CategoryID
+FROM Product;
